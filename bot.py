@@ -1,5 +1,5 @@
 import discord
-from nh import NHClient
+from nh import NHClient, HentaiActivity
 import json
 import sys
 
@@ -11,21 +11,13 @@ except FileNotFoundError as file_error:
     print('Settings load error: {}'.format(file_error.strerror))
     sys.exit(file_error.errno)
 
-client = discord.ext.commands.Bot(command_prefix='nh ', description='You wanted this, didn\'t you?')
+bot = discord.ext.commands.Bot(command_prefix='nh ', description=r"You wanted this, didn't you?")
 
-@client.event
+@bot.event
 async def on_connect():
-    print("Connected as " + client.user.name)
+    print("Connected as {} - {}".format(bot.user, bot.description))
 
-@client.event
-async def on_ready():
-    # TODO write proper presence for daily doujin
-    await client.change_presence()
-client.add_cog(NHClient(client))
+bot.add_cog(NHClient(bot))
 
 if __name__ == "__main__":
-    try:
-        client.run(token)
-    except KeyboardInterrupt:
-        print("Discord client is closing...")
-        client.close()
+    bot.run(token)

@@ -1,1 +1,2 @@
-from .client import NHClient
+from .nhclient import *
+from .hentai_activity import *
