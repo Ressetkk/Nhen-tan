@@ -17,14 +17,13 @@ class NHApi(object):
         return(self.get(id))
 
     def search(self, query : str, sort : str = 'date', page : int = 1):
-        response = requests.get('{0}/api/galleries/search?query={}&sort={}&page={}'.format(
+        response = requests.get('{0}/api/galleries/search?query={1}&sort={2}&page={3}'.format(
             self.API_URL,
             query,
             sort,
             page
         ))
         response.raise_for_status()
-        print(response.json())
         return(response.json())
 
     def get_cover_thumbnail(self, media_id : int):

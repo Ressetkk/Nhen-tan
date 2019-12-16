@@ -1,5 +1,5 @@
 import discord
-from nh import NHClient, HentaiActivity
+from nh import NHentai, HentaiActivity
 import json
 import sys
 
@@ -11,13 +11,13 @@ except FileNotFoundError as file_error:
     print('Settings load error: {}'.format(file_error.strerror))
     sys.exit(file_error.errno)
 
-bot = discord.ext.commands.Bot(command_prefix='nh ', description=r"You wanted this, didn't you?")
+bot = discord.ext.commands.Bot(command_prefix=discord.ext.commands.when_mentioned, description=r"You wanted this, didn't you?")
 
 @bot.event
 async def on_connect():
     print("Connected as {} - {}".format(bot.user, bot.description))
 
-bot.add_cog(NHClient(bot))
+bot.add_cog(NHentai(bot))
 
 if __name__ == "__main__":
     bot.run(token)

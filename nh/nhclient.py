@@ -2,29 +2,57 @@ from datetime import datetime
 from discord import Embed
 from discord.ext import commands
 from .nhapi import NHApi
+import argparse
 
-class NHClient(commands.Cog):
+def get_args(args):
+    print(args)
+    return
+
+class NHentai(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api = NHApi()
     
     @commands.command()
     async def get(self, ctx, id : int):
+        """
+Returns nhentai gallery information from given ID
+Example: nh get 177013
+        """
         response = self.api.get(id)
         await ctx.send(embed=self._build_embed(response))
         return True
+    
+    @get.error
+    async def get_error(self, ctx, error):
+        if isinstance(error, Exception):
+            await ctx.send("{}".format(error))
 
     @commands.command()
-    async def search(self, ctx, query : str):
-        self.api.search(query)
-        await ctx.send("Search is not implemented yet...")
-        return (True)
+    async def search(self, ctx, *, query : str):
+        def check(reaction, user):
+            return user == ctx.author and reaction.emoji in ('◀️','☑️','▶️')
+        results = self.api.search("vanilla")['result']
+        entry = await ctx.send(embed=self._build_embed(results[0]))
+        while True:
+            await entry.add_reaction('◀️')
+            await entry.add_reaction('☑️')
+            await entry.add_reaction('▶️')
+            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
+            
+            if reaction.emoji == '◀️':
+                await entry.edit(embed=self._build_embed(results[0]))
+            if reaction.emoji == '▶️':
+                await entry.edit(embed=self._build_embed(results[1]))
+            if reaction.emoji == '☑️':
+                break
+            await entry.clear_reactions()
+        await entry.clear_reactions()
 
     @commands.command()
     async def random(self, ctx):
         await ctx.send(embed=self._build_embed(self.api.random()))
 
-    # TODO custom embed model for Hentai
     def _build_embed(self, response):
         tags = {
             'language' : [],
@@ -79,4 +107,4 @@ class NHClient(commands.Cog):
         return(Embed.from_dict(data))
 
 def setup(bot):
-    bot.add_cog(NHClient(bot))
+    bot.add_cog(NHentai(bot))
