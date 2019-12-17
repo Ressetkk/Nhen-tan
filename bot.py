@@ -18,7 +18,7 @@ except FileNotFoundError as file_error:
     print('Settings load error: {}'.format(file_error.strerror))
     sys.exit(file_error.errno)
 
-bot = discord.ext.commands.Bot(command_prefix=discord.ext.commands.when_mentioned, description=r"You wanted this, didn't you?")
+bot = discord.ext.commands.Bot(command_prefix=discord.ext.commands.when_mentioned_or('nh ', 'Nh ', 'NH '), description=r"You wanted this, didn't you?")
 
 # TODO add dynamic cog loading at boot
 bot.add_cog(NHentai(bot))
