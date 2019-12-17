@@ -134,11 +134,13 @@ Returns random doujinshi from nhentai.
             'artist' : [],
             'category': []
         }
+        
         for tag in response['tags']:
             try:
                 tags[tag['type']].append(tag)
             except KeyError:
                 continue
+        logger.debug('_build_embed - parsed tags: {}'.format(tags))
         data = {
             'title' : response['title']['english'],
             'description' : response['title']['japanese'],
@@ -161,23 +163,24 @@ Returns random doujinshi from nhentai.
                 },
                 {
                     'name' : 'Languages',
-                    'value' : ', '.join(['[{0}]({1})'.format(tag['name'], self.api.get_url(tag['url'])) for tag in tags['language']]),
+                    'value' : ', '.join(['[{0}]({1})'.format(tag['name'], self.api.get_url(tag['url'])) for tag in tags['language']]) if tags['language'] else 'None',
                     'inline' : 'true'
                 },
                 {
                     'name' : 'Categories',
-                    'value' : ', '.join(['[{0}]({1})'.format(tag['name'], self.api.get_url(tag['url'])) for tag in tags['category']]),
+                    'value' : ', '.join(['[{0}]({1})'.format(tag['name'], self.api.get_url(tag['url'])) for tag in tags['category']]) if tags['category'] else 'None',
                     'inline' : 'true'
                 },
                 {
                     'name' : 'Tags',
-                    'value' : ', '.join([tag['name'] for tag in tags['tag']])
+                    'value' : ', '.join([tag['name'] for tag in tags['tag']]) if tags['tag'] else 'None'
                 }
             ],
             'footer' : {
                 'text' : 'No. {}'.format(response['id'])
             }
         }
+        logger.debug('_build_embed - embed payload: {}'.format(data))
         return(Embed.from_dict(data))
 
 def setup(bot):
