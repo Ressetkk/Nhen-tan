@@ -10,7 +10,7 @@ before_install:
 before_script:
   - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_TOKEN
 script:
-  - docker build -t $DOCKERHUB_REPO:latest -t $DOCKERHUB_REPO:$VERSION
+  - docker build --build-arg VERSION=$VERSION -t $DOCKERHUB_REPO:latest -t $DOCKERHUB_REPO:$VERSION
 after_success:
   - docker push $DOCKERHUB_REPO:latest
   - docker push $DOCKERHUB_REPO:$VERSION
