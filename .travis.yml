@@ -5,7 +5,7 @@ services:
 if: branch = master
 
 before_install:
-  - openssl aes-256-cbc -K $encrypted_12c8071d2874_key -iv $encrypted_12c8071d2874_iv -in settings.json.enc -out settings.json -d
+  #- openssl aes-256-cbc -K $encrypted_12c8071d2874_key -iv $encrypted_12c8071d2874_iv -in settings.json.enc -out settings.json -d
   - export VERSION=$(cat VERSION)
 before_script:
   - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_TOKEN

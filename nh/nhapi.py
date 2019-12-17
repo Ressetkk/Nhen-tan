@@ -12,9 +12,11 @@ class NHApi(object):
         return(response)
     
     async def random(self):
-        response = await self._get(self.API_URL + '/random')
-        id = response.url.replace(self.API_URL, '').split('/')[2]
-        return(self.get(id))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.API_URL + '/random') as r:
+                r.raise_for_status()
+                id = r.url.path.split('/')[2]
+                return(await self.get(id))
 
     async def search(self, query : str, sort : str = 'date', page : int = 1):
         if sort not in ('date', 'popular'):

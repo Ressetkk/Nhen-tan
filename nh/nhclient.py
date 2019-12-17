@@ -69,7 +69,10 @@ Usage: search <query> [ sort={ 'date' | 'popular' } ]
         page, index = 1, 0
         
         # send first entry
-        entry = await ctx.send(embed=self._build_embed(results[0]))
+        try:
+            entry = await ctx.send(embed=self._build_embed(results[0]))
+        except IndexError:
+            raise IndexError("No results...")
         while True:
             await entry.add_reaction('◀️')
             await entry.add_reaction('☑️')
@@ -121,7 +124,8 @@ Usage: search <query> [ sort={ 'date' | 'popular' } ]
         """
 Returns random doujinshi from nhentai.
         """
-        await ctx.send(embed=self._build_embed(self.api.random()))
+        response = await self.api.random()
+        await ctx.send(embed=self._build_embed(response))
 
     def _build_embed(self, response):
         tags = {
