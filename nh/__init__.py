@@ -1,2 +1,2 @@
-from .nhclient import *
-from .hentai_activity import *
+from .nhclient import NHentai
+from .hentai_activity import HentaiActivity

@@ -2,7 +2,14 @@ from datetime import datetime
 from discord import Embed
 from discord.ext import commands
 from .nhapi import NHApi
-import argparse
+import logging
+import sys
+
+logger = logging.getLogger('nhentai')
+logger.setLevel(logging.WARNING)
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 def get_args(args):
     parsed = {
@@ -20,67 +27,100 @@ class NHentai(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api = NHApi()
-    
+
+    @commands.is_nsfw()
     @commands.command()
     async def get(self, ctx, id : int):
         """
 Returns nhentai gallery information from given ID
-Example: nh get 177013
+Usage: get <id>
         """
-        response = self.api.get(id)
+        response = await self.api.get(id)
         await ctx.send(embed=self._build_embed(response))
         return True
     
     @get.error
     async def get_error(self, ctx, error):
         if isinstance(error, Exception):
+            logger.exception(error)
             await ctx.send("{}".format(error))
 
+    @commands.is_nsfw()
     @commands.command()
     async def search(self, ctx, *, query : get_args):
+        """
+Search nhentai by given query and parameters.
+Usage: search <query> [ sort={ 'date' | 'popular' } ]
+        """
+        # basic check if the caller added a reaction
         def check(reaction, user):
             return user == ctx.author and reaction.emoji in ('◀️','☑️','▶️')
 
-        response = self.api.search(query['query'], sort=query['sort'])
+        # handling if sort parameter is not passed
+        try:
+            sort = query['sort']
+        except KeyError:
+            sort = 'date'
 
+        # get first response from API and deserialize
+        response = await self.api.search(query['query'], sort=sort)
         results = response['result']
         num_pages = response['num_pages']
         page, index = 1, 0
-
+        
+        # send first entry
         entry = await ctx.send(embed=self._build_embed(results[0]))
         while True:
             await entry.add_reaction('◀️')
             await entry.add_reaction('☑️')
             await entry.add_reaction('▶️')
-            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
-            
+
+            reaction, _ = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
+            # TODO more unified exploring through lists.
             if reaction.emoji == '◀️':
                 index -= 1
+                try:
+                    if index == -1:
+                        raise IndexError
+                except IndexError:
+                    if page == 1:
+                        page = num_pages
+                    else:
+                        page -= 1
+                    response = await self.api.search(query['query'], sort=sort, page=page)
+                    results = response['result']
+                    index = len(results)-1
+
             if reaction.emoji == '▶️':
                 index += 1
-                
                 try:
                     results[index]
                 except IndexError:
-                    index = 0
                     if page < num_pages:
                         page += 1
                     else:
                         page = 1
-                    response = self.api.search(query['query'], sort=query['sort'], page=page)
+                    response = await self.api.search(query['query'], sort=sort, page=page)
+                    results = response['result']
+                    index = 0
 
             if reaction.emoji == '☑️':
                 break
             await entry.clear_reactions()
-            await entry.edit(embed=self._build_embed(results[index]))
+            await entry.edit(content="page {}/{}".format(page, num_pages), embed=self._build_embed(results[index]))
         await entry.clear_reactions()
 
     @search.error
     async def search_error(self, ctx, error):
+        logger.exception(error)
         await ctx.send(error)
 
+    @commands.is_nsfw()
     @commands.command()
     async def random(self, ctx):
+        """
+Returns random doujinshi from nhentai.
+        """
         await ctx.send(embed=self._build_embed(self.api.random()))
 
     def _build_embed(self, response):
