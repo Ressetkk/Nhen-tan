@@ -5,8 +5,16 @@ from .nhapi import NHApi
 import argparse
 
 def get_args(args):
-    print(args)
-    return
+    parsed = {
+        'query' : ''
+    }
+    for elem in args.split():
+        if '=' in elem:
+            arg = elem.split('=')
+            parsed[arg[0]] = arg[1]
+        else:
+            parsed['query'] += elem + ' '
+    return parsed
 
 class NHentai(commands.Cog):
     def __init__(self, bot):
@@ -29,10 +37,16 @@ Example: nh get 177013
             await ctx.send("{}".format(error))
 
     @commands.command()
-    async def search(self, ctx, *, query : str):
+    async def search(self, ctx, *, query : get_args):
         def check(reaction, user):
             return user == ctx.author and reaction.emoji in ('◀️','☑️','▶️')
-        results = self.api.search("vanilla")['result']
+
+        response = self.api.search(query['query'], sort=query['sort'])
+
+        results = response['result']
+        num_pages = response['num_pages']
+        page, index = 1, 0
+
         entry = await ctx.send(embed=self._build_embed(results[0]))
         while True:
             await entry.add_reaction('◀️')
@@ -41,13 +55,29 @@ Example: nh get 177013
             reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
             
             if reaction.emoji == '◀️':
-                await entry.edit(embed=self._build_embed(results[0]))
+                index -= 1
             if reaction.emoji == '▶️':
-                await entry.edit(embed=self._build_embed(results[1]))
+                index += 1
+                
+                try:
+                    results[index]
+                except IndexError:
+                    index = 0
+                    if page < num_pages:
+                        page += 1
+                    else:
+                        page = 1
+                    response = self.api.search(query['query'], sort=query['sort'], page=page)
+
             if reaction.emoji == '☑️':
                 break
             await entry.clear_reactions()
+            await entry.edit(embed=self._build_embed(results[index]))
         await entry.clear_reactions()
+
+    @search.error
+    async def search_error(self, ctx, error):
+        await ctx.send(error)
 
     @commands.command()
     async def random(self, ctx):

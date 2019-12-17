@@ -17,6 +17,9 @@ class NHApi(object):
         return(self.get(id))
 
     def search(self, query : str, sort : str = 'date', page : int = 1):
+        if sort not in ('date', 'popular'):
+            raise ValueError("You can only sort by 'date' and 'popular'")
+
         response = requests.get('{0}/api/galleries/search?query={1}&sort={2}&page={3}'.format(
             self.API_URL,
             query,
